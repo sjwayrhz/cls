@@ -18,9 +18,9 @@ properties([
                     classpath: [],
                     sandbox: false,
                     script:
-                        'return["paw-api","paw-cron","paw-server","store-cron","store-server", \
-                        "paw-sole-spider","paw-spider-app","paw-spider-hudongpingtai","owl-guotai-junan-maintenance-project","paw-spider-pipeline","paw-spider-web", \
-                        "paw-frontend","paw-mercury-parser","store-web"]'
+                        'return["cls-web","in-app-views","cailianpress-admin-web","h5quotes", \
+                        "cls-order","cailianpress-wap","cailianpress-statics","stib-cailianpress-web","stib-in-app-views","lj-website", \
+                        "ljwap","ljcms","hongan-listed-company-web"]'
                 ]
             ]
         ],
@@ -37,9 +37,9 @@ pipeline {
 
     environment {
         tag = createVersion()
-        repositry = "swr.cn-east-2.myhuaweicloud.com/lanjing"
+        repositry = "swr.cn-east-2.myhuaweicloud.com/yb7"
         sshport = "30022"
-        sship = "119.3.70.144"
+        sship = "122.112.212.229"
     }
 
     stages {
@@ -53,9 +53,8 @@ pipeline {
             agent any
             steps {
                 sh """
-                  cd $WORKSPACE/../owldir/${params.git}
+                  cd $WORKSPACE/../cailianfe/${params.git}
                   pwd
-                  if [[ ${params.git} == "paw-server" ]];then cd "djangoy";fi
                   git reset --hard HEAD
                   git checkout -B ${params.branch}
                   git checkout -b ${tag}
@@ -71,9 +70,8 @@ pipeline {
             steps {
                 script {
                     sh """
-                       cd $WORKSPACE/../owldir/${params.git}
-                       if [[ ${params.git} == "paw-server" ]];then cd "djangoy";fi
-                       if [[ ${params.git} == "paw-frontend" || ${params.git} == "paw-mercury-parser"|| ${params.git} == "store-web" ]];then rm -f dist.tar.gz && npm run build && tar -czf dist.tar.gz dist;fi
+                       cd $WORKSPACE/../cailianfe/${params.git}
+                       if [[ ${params.git} == "cailianpress-wap" ]] || [[ ${params.git} == "cls-order" ]] ||  [[ ${params.git} == "cailianpress-admin-web" ]]; then echo "${params.git}"; else rm -f dist.tar.gz && npm run build && tar -czf dist.tar.gz dist;fi;
                        docker build -t ${repositry}/${params.git}:${tag} .
                        """
                 }

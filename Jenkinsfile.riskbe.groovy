@@ -18,7 +18,7 @@ properties([
                     classpath: [],
                     sandbox: false,
                     script:
-                        'return["cls-es","cls-sync"]'
+                        'return["ljapi","ljapp","ljims","ljsearch"]'
                 ]
             ]
         ],
@@ -27,7 +27,7 @@ properties([
 ])
 
 def createVersion() {
-    return new Date().format('yyyyMMddHHmm') + ".${env.BUILD_ID}"
+    return new Date().format('yyyyMMddHHmm') + ".${env.JOB_NAME}" + ".${env.BUILD_ID}"
 }
 
 pipeline {
@@ -35,7 +35,9 @@ pipeline {
 
     environment {
         tag = createVersion()
-        repositry = "swr.cn-east-2.myhuaweicloud.com/yb7"
+        repositry = "swr.cn-east-2.myhuaweicloud.com/riskflow"
+        sshport = "30022"
+        sship = "119.3.23.176"
     }
 
     stages {
@@ -49,11 +51,10 @@ pipeline {
             agent any
             steps {
                 sh """                    
-                    cd $WORKSPACE/../cailian
-                    if  [[ ${params.git} == "cls-sync" ]];then cd "sync";fi
-                    if  [[ ${params.git} == "cls-es" ]];then cd "es";fi
+                    cd $WORKSPACE/../risk/${params.git}
                     pwd
                     git reset --hard HEAD
+                    git checkout -B ${params.branch}
                     git checkout -b ${tag}
                     git branch -D ${params.branch}
                     git checkout -b ${params.branch}
@@ -67,10 +68,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                        cd $WORKSPACE/../cailian
-                        if  [[ ${params.git} == "cls-sync" ]];then cd "sync/deploy";fi
-                        if  [[ ${params.git} == "cls-es" ]];then cd "es/deploy";fi
-                        rm -f ${params.git}
+                        cd $WORKSPACE/../risk/${params.git}/deploy
                         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${params.git} ../main.go
                         docker build -t ${repositry}/${params.git}:${tag} .
                         docker images
@@ -94,7 +92,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                       ssh -p 30022 122.112.150.241 "kubectl set image deployment/${params.git} ${params.git}=${repositry}/${params.git}:${tag}"
+                       ssh -p ${sshport} ${sship} "kubectl set image deployment/${params.git} ${params.git}=${repositry}/${params.git}:${tag}"
                     """
                 }
             }
